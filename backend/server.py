@@ -336,7 +336,19 @@ async def create_compliance_scan(request: ComplianceScanRequest):
         # Store in database
         result_dict = scan_result.model_dump()
         result_dict['timestamp'] = result_dict['timestamp'].isoformat()
+        
+        # Add artifact_ids to the scan record
+        result_dict['artifact_ids'] = request.artifact_ids
+        
         await db.compliance_scans.insert_one(result_dict)
+        
+        # Update artifacts with scan_id
+        if request.artifact_ids:
+            for artifact_id in request.artifact_ids:
+                await db.artifacts.update_one(
+                    {"id": artifact_id},
+                    {"$set": {"scan_id": scan_result.id}}
+                )
         
         return scan_result
         
