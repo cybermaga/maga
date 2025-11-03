@@ -12,3 +12,6 @@ env
 .env.local
 build
 dist
+.emergent
+*.tmp
+tmp/
