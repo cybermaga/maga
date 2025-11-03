@@ -46,7 +46,8 @@ const NewScan = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post(`${API}/compliance/scan`, formData);
+      const scanData = { ...formData, artifact_ids: artifactIds };
+      const response = await complianceApi.createScan(scanData);
       toast.success("Compliance scan completed successfully!");
       navigate(`/report/${response.data.id}`);
     } catch (error) {
