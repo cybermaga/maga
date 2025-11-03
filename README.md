@@ -92,7 +92,32 @@ pdf_report = report_generator.generate_pdf_report({...})
     └── .env
 ```
 
-## Setup Instructions
+## Quick Start with Docker 🐳
+
+**Recommended**: Use Docker for the easiest setup.
+
+```bash
+# Clone the repository
+git clone <your-repo>
+cd emergent-ai-compliance
+
+# Start all services with Docker Compose
+docker-compose up -d
+
+# Or use Makefile
+make setup
+```
+
+Access the application:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8001
+- **API Documentation**: http://localhost:8001/docs
+
+See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
+
+---
+
+## Manual Setup (Without Docker)
 
 ### Prerequisites
 - Python 3.11+
