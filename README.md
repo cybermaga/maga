@@ -306,7 +306,7 @@ The SDK is designed with modularity in mind:
 ### Backend Testing
 ```bash
 # Test API endpoints
-curl -X POST ${REACT_APP_BACKEND_URL}/api/compliance/scan \
+curl -X POST http://localhost:8001/api/compliance/scan \
   -H "Content-Type: application/json" \
   -d '{
     "system_name": "Test System",
@@ -321,6 +321,17 @@ Open the web application and:
 2. Fill in system information
 3. Submit and view the generated report
 4. Export report as HTML or PDF
+
+### Docker Testing
+```bash
+# Test all services
+make health
+
+# Or manually
+curl -f http://localhost:8001/api/
+curl -f http://localhost:3000
+docker exec emergent-compliance-mongodb mongosh --eval "db.adminCommand('ping')"
+```
 
 ## License
 
