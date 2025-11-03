@@ -64,6 +64,9 @@ class ComplianceScanRequest(BaseModel):
     testing_procedures: str = ""
     human_oversight: str = ""
     accuracy_metrics: str = ""
+    
+    # NEW: Artifact IDs
+    artifact_ids: List[str] = Field(default_factory=list)
 
 
 class ComplianceScanResult(BaseModel):
