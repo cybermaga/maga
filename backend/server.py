@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Response, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,17 +10,28 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Optional
 import uuid
 from datetime import datetime, timezone
+import hashlib
+import shutil
+import zipfile
 
 # Import SDK modules
 from sdk import RiskClassifier, ComplianceChecker, DocumentAnalyzer, ReportGenerator
+
+# Import new models and config
+from models import (
+    Artifact, ArtifactType, Evidence, EvidenceStatus,
+    ArtifactUploadResponse, EvidenceRunRequest, EvidenceRunResponse, EvidenceSummary
+)
+from config import MONGO_URL, DB_NAME, ARTIFACTS_DIR, EVIDENCE_DIR, ALLOWED_ORIGINS, MAX_UPLOAD_SIZE
+from mapping import get_articles_for_rule, get_all_rules
+from worker import celery_app
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
 
 # Create the main app without a prefix
 app = FastAPI(title="Emergent AI Compliance API")
