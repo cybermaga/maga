@@ -214,6 +214,12 @@ const NewScan = () => {
             </CardContent>
           </Card>
 
+          {/* Artifact Uploader */}
+          <ArtifactUploader
+            scanId={null}
+            onArtifactsChange={setArtifactIds}
+          />
+
           {/* Compliance Documentation */}
           <Card className="mb-6 border-slate-200" data-testid="compliance-docs-card">
             <CardHeader>
