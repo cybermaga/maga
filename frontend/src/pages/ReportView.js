@@ -401,6 +401,8 @@ const ReportView = () => {
             </Accordion>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
