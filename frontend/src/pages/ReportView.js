@@ -36,7 +36,7 @@ const ReportView = () => {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}`);
+      const response = await complianceApi.getReport(reportId);
       setReport(response.data);
     } catch (error) {
       console.error("Error fetching report:", error);
@@ -50,9 +50,7 @@ const ReportView = () => {
   const handleExport = async (format) => {
     try {
       setExporting(format);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}/export?format=${format}`, {
-        responseType: format === 'pdf' ? 'blob' : 'blob'
-      });
+      const response = await complianceApi.exportReport(reportId, format);
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -73,7 +71,7 @@ const ReportView = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API}/compliance/reports/${reportId}`);
+      await complianceApi.deleteReport(reportId);
       toast.success("Report deleted successfully");
       navigate('/');
     } catch (error) {
