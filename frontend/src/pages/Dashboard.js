@@ -25,7 +25,7 @@ const Dashboard = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports`);
+      const response = await complianceApi.getReports();
       setReports(response.data);
       calculateStats(response.data);
     } catch (error) {
