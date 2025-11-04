@@ -4,6 +4,39 @@
 
 A comprehensive SDK and web application for automatically evaluating AI systems against the EU AI Act requirements.
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![React](https://img.shields.io/badge/react-19.0-blue.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/fastapi-0.110-green.svg)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
+![Dashboard Screenshot](https://via.placeholder.com/800x400?text=EU+AI+Compliance+Dashboard)
+
+---
+
+## 🚀 Quick Start with Docker
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/emergent-ai-compliance.git
+cd emergent-ai-compliance
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Or use the quick start script
+./docker-start.sh
+```
+
+**Access the application:**
+- 🌐 **Frontend**: http://localhost:3000
+- 🔧 **Backend API**: http://localhost:8001
+- 📚 **API Docs**: http://localhost:8001/docs
+
+**That's it!** No Python, Node.js, or MongoDB installation required. 🎉
+
+---
+
 ## Features
 
 ### SDK (Python)
@@ -92,7 +125,32 @@ pdf_report = report_generator.generate_pdf_report({...})
     └── .env
 ```
 
-## Setup Instructions
+## Quick Start with Docker 🐳
+
+**Recommended**: Use Docker for the easiest setup.
+
+```bash
+# Clone the repository
+git clone <your-repo>
+cd emergent-ai-compliance
+
+# Start all services with Docker Compose
+docker-compose up -d
+
+# Or use Makefile
+make setup
+```
+
+Access the application:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8001
+- **API Documentation**: http://localhost:8001/docs
+
+See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
+
+---
+
+## Manual Setup (Without Docker)
 
 ### Prerequisites
 - Python 3.11+
@@ -281,7 +339,7 @@ The SDK is designed with modularity in mind:
 ### Backend Testing
 ```bash
 # Test API endpoints
-curl -X POST ${REACT_APP_BACKEND_URL}/api/compliance/scan \
+curl -X POST http://localhost:8001/api/compliance/scan \
   -H "Content-Type: application/json" \
   -d '{
     "system_name": "Test System",
@@ -296,6 +354,17 @@ Open the web application and:
 2. Fill in system information
 3. Submit and view the generated report
 4. Export report as HTML or PDF
+
+### Docker Testing
+```bash
+# Test all services
+make health
+
+# Or manually
+curl -f http://localhost:8001/api/
+curl -f http://localhost:3000
+docker exec emergent-compliance-mongodb mongosh --eval "db.adminCommand('ping')"
+```
 
 ## License
 
