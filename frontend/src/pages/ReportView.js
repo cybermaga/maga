@@ -231,7 +231,16 @@ const ReportView = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Overall Score Card */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence & Mapping</TabsTrigger>
+            <TabsTrigger value="details">Detailed Results</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-8 mt-6">
+            {/* Overall Score Card */}
         <Card className="mb-8 border-slate-200" data-testid="overall-score-card">
           <CardHeader>
             <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
