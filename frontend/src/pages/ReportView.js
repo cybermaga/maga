@@ -317,7 +317,15 @@ const ReportView = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          {/* Evidence Tab */}
+          <TabsContent value="evidence" className="mt-6">
+            <EvidenceTab scanId={reportId} />
+          </TabsContent>
+
+          {/* Details Tab */}
+          <TabsContent value="details" className="mt-6">
         {/* Detailed Compliance Results */}
         <Card className="border-slate-200" data-testid="detailed-results-card">
           <CardHeader>
