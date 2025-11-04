@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Shield, TrendingUp, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { complianceApi } from "@/lib/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -28,7 +25,7 @@ const Dashboard = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports`);
+      const response = await complianceApi.getReports();
       setReports(response.data);
       calculateStats(response.data);
     } catch (error) {

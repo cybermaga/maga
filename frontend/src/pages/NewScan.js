@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import ArtifactUploader from "@/components/ArtifactUploader";
+import { complianceApi } from "@/lib/api";
 
 const NewScan = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [artifactIds, setArtifactIds] = useState([]);
   const [formData, setFormData] = useState({
     system_name: "",
     description: "",
@@ -28,7 +27,8 @@ const NewScan = () => {
     technical_docs: "",
     testing_procedures: "",
     human_oversight: "",
-    accuracy_metrics: ""
+    accuracy_metrics: "",
+    artifact_ids: []
   });
 
   const handleChange = (e) => {
@@ -46,7 +46,8 @@ const NewScan = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post(`${API}/compliance/scan`, formData);
+      const scanData = { ...formData, artifact_ids: artifactIds };
+      const response = await complianceApi.createScan(scanData);
       toast.success("Compliance scan completed successfully!");
       navigate(`/report/${response.data.id}`);
     } catch (error) {
@@ -212,6 +213,12 @@ const NewScan = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Artifact Uploader */}
+          <ArtifactUploader
+            scanId={null}
+            onArtifactsChange={setArtifactIds}
+          />
 
           {/* Compliance Documentation */}
           <Card className="mb-6 border-slate-200" data-testid="compliance-docs-card">

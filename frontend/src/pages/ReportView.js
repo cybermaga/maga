@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Loader2, Shield, CheckCircle2, XCircle, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,9 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import EvidenceTab from "@/components/EvidenceTab";
+import { complianceApi } from "@/lib/api";
 
 const ReportView = () => {
   const { reportId } = useParams();
@@ -37,7 +36,7 @@ const ReportView = () => {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}`);
+      const response = await complianceApi.getReport(reportId);
       setReport(response.data);
     } catch (error) {
       console.error("Error fetching report:", error);
@@ -51,9 +50,7 @@ const ReportView = () => {
   const handleExport = async (format) => {
     try {
       setExporting(format);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}/export?format=${format}`, {
-        responseType: format === 'pdf' ? 'blob' : 'blob'
-      });
+      const response = await complianceApi.exportReport(reportId, format);
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -74,7 +71,7 @@ const ReportView = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API}/compliance/reports/${reportId}`);
+      await complianceApi.deleteReport(reportId);
       toast.success("Report deleted successfully");
       navigate('/');
     } catch (error) {
@@ -234,7 +231,16 @@ const ReportView = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Overall Score Card */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence & Mapping</TabsTrigger>
+            <TabsTrigger value="details">Detailed Results</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-8 mt-6">
+            {/* Overall Score Card */}
         <Card className="mb-8 border-slate-200" data-testid="overall-score-card">
           <CardHeader>
             <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -311,7 +317,15 @@ const ReportView = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          {/* Evidence Tab */}
+          <TabsContent value="evidence" className="mt-6">
+            <EvidenceTab scanId={reportId} />
+          </TabsContent>
+
+          {/* Details Tab */}
+          <TabsContent value="details" className="mt-6">
         {/* Detailed Compliance Results */}
         <Card className="border-slate-200" data-testid="detailed-results-card">
           <CardHeader>
@@ -387,6 +401,8 @@ const ReportView = () => {
             </Accordion>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
