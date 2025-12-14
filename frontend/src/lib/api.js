@@ -1,10 +1,32 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API_BASE = `${BACKEND_URL}/api`;
+// Use relative API path for Preview/Production, or explicit URL for development
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+
+console.log('API Base URL:', API_BASE);
 
 // Configure axios defaults
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.timeout = 30000; // 30 second timeout
+
+// Add response interceptor for better error handling
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      // Server responded with error status
+      console.error('API Error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      // Request made but no response
+      console.error('Network Error: No response from server');
+    } else {
+      // Something else happened
+      console.error('Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * API Client for Emergent AI Compliance
