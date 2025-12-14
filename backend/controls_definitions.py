@@ -1,4 +1,5 @@
 """Control definitions for EU AI Act Articles 9-15 + Annex IV"""
+from typing import List, Optional
 from evidence_models import Control, AutomationLevel, SeverityLevel, ControlMapping
 
 
