@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import hashlib
 import shutil
 import zipfile
+import tempfile
 
 # Import SDK modules
 from sdk import RiskClassifier, ComplianceChecker, DocumentAnalyzer, ReportGenerator
@@ -22,9 +23,15 @@ from models import (
     Artifact, ArtifactType, Evidence, EvidenceStatus,
     ArtifactUploadResponse, EvidenceRunRequest, EvidenceRunResponse, EvidenceSummary
 )
+from evidence_models import (
+    EvidenceScan, ScanType, ScanMethod, ScanTarget, CoverageStats,
+    RepoScanResponse, EvidenceScanResult
+)
 from config import MONGO_URL, DB_NAME, ARTIFACTS_DIR, EVIDENCE_DIR, ALLOWED_ORIGINS, MAX_UPLOAD_SIZE
 from mapping import get_articles_for_rule, get_all_rules
 from worker import celery_app
+from repo_scanner import RepoScanner, extract_zip_to_temp, calculate_coverage
+from controls_definitions import get_all_controls, get_control_statistics
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
