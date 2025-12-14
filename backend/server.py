@@ -40,6 +40,9 @@ compliance_checker = ComplianceChecker()
 document_analyzer = DocumentAnalyzer()
 report_generator = ReportGenerator()
 
+# Initialize evidence-based scanner
+repo_scanner = RepositoryScanner()
+
 
 # Define Models
 class ComplianceScanRequest(BaseModel):
