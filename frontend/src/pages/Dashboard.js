@@ -105,14 +105,25 @@ const Dashboard = () => {
                 <p className="text-sm text-slate-600 mt-1" data-testid="app-subtitle">EU AI Act Compliance Analysis Tool</p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate('/scan/new')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base font-semibold rounded-lg"
-              data-testid="new-scan-button"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              New Compliance Scan
-            </Button>
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => navigate('/scan/repo')}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-6 text-base font-semibold rounded-lg"
+                data-testid="repo-scan-button"
+              >
+                <Upload className="mr-2 h-5 w-5" />
+                Scan Repository
+              </Button>
+              <Button
+                onClick={() => navigate('/scan/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base font-semibold rounded-lg"
+                data-testid="new-scan-button"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                New Compliance Scan
+              </Button>
+            </div>
           </div>
         </div>
       </header>
