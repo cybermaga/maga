@@ -33,7 +33,14 @@ const Dashboard = () => {
       calculateStats(response.data);
     } catch (error) {
       console.error("Error fetching reports:", error);
-      toast.error("Failed to load reports");
+      // Don't show error toast on initial load - just set empty reports
+      setReports([]);
+      setStats({ total: 0, compliant: 0, partial: 0, nonCompliant: 0 });
+      
+      // Only show error if it's not a network/connection issue
+      if (error.response && error.response.status !== 404) {
+        toast.error("Failed to load reports");
+      }
     } finally {
       setLoading(false);
     }
