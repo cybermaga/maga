@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Response, UploadFile, File, Form
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,9 +9,16 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Optional
 import uuid
 from datetime import datetime, timezone
+import tempfile
+import shutil
 
 # Import SDK modules
 from sdk import RiskClassifier, ComplianceChecker, DocumentAnalyzer, ReportGenerator
+
+# Import evidence-based scanning modules
+from evidence_models import EvidenceScan, Finding, Evidence, CoverageStats
+from repo_scanner import RepositoryScanner
+from controls_definitions import controls_to_dict
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
