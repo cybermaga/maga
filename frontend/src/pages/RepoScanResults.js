@@ -35,8 +35,16 @@ const RepoScanResults = () => {
       setScan(result);
     } catch (error) {
       console.error("Error fetching scan results:", error);
-      toast.error("Failed to load scan results");
-      navigate('/');
+      
+      // More graceful error handling
+      if (error.response?.status === 404) {
+        toast.error("Scan not found");
+      } else {
+        toast.error("Unable to load scan results. Please try again.");
+      }
+      
+      // Navigate back after showing error
+      setTimeout(() => navigate('/'), 2000);
     } finally {
       setLoading(false);
     }
