@@ -203,10 +203,23 @@ const Dashboard = () => {
         {/* Reports List */}
         <Card className="border-slate-200" data-testid="reports-list-card">
           <CardHeader>
-            <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Recent Compliance Scans
-            </CardTitle>
-            <CardDescription>View and manage your AI system compliance reports</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Recent Compliance Scans
+                </CardTitle>
+                <CardDescription>View and manage your AI system compliance reports</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/api-info')}
+                className="border-slate-300 text-slate-700"
+                data-testid="api-info-button"
+              >
+                <Code className="mr-2 h-4 w-4" />
+                API Docs
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
