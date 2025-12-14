@@ -18,6 +18,15 @@ export const complianceApi = {
     responseType: 'blob'
   }),
   deleteReport: (id) => api.delete(`/api/compliance/reports/${id}`),
+  
+  // Repo Scan (NEW)
+  scanRepo: (formData) => api.post('/api/compliance/scan/repo', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  getRepoScan: (id) => api.get(`/api/compliance/scan/repo/${id}`),
+  getControls: () => api.get('/api/controls'),
 };
 
 // Artifacts
