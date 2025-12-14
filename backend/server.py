@@ -303,6 +303,165 @@ async def get_raw_evidence(scan_id: str, evidence_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch raw evidence: {str(e)}")
 
 
+# ============= REPO SCAN ENDPOINTS (Evidence-based) =============
+
+@api_router.post("/compliance/scan/repo", response_model=RepoScanResponse)
+async def scan_repository(
+    file: UploadFile = File(...),
+    system_name: str = Form(...)
+):
+    """Scan repository for evidence-based compliance (MVP)"""
+    try:
+        # Validate file is zip
+        if not file.filename.endswith('.zip'):
+            raise HTTPException(status_code=400, detail="Only ZIP files are supported")
+        
+        # Save uploaded zip
+        scan_id = str(uuid.uuid4())
+        temp_zip = Path(tempfile.mkdtemp()) / f"{scan_id}.zip"
+        
+        with open(temp_zip, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Extract zip
+        repo_path = extract_zip_to_temp(str(temp_zip))
+        
+        # Run scanner
+        scanner = RepoScanner(scan_id, repo_path)
+        evidence_list, findings_list = scanner.scan()
+        
+        # Calculate coverage
+        coverage = calculate_coverage(findings_list)
+        
+        # Create evidence scan result
+        evidence_scan = EvidenceScan(
+            id=scan_id,
+            name=system_name,
+            type=ScanType.EVIDENCE,
+            scan_method=ScanMethod.REPO,
+            target=ScanTarget(
+                type="repository",
+                path=file.filename,
+                metadata={"uploaded_file": file.filename}
+            ),
+            findings=findings_list,
+            evidence_count=len(evidence_list),
+            coverage=coverage,
+            completed_at=datetime.now(timezone.utc),
+            metadata={"first_wave_scan": True, "controls_checked": len(findings_list)}
+        )
+        
+        # Store in database
+        scan_dict = evidence_scan.model_dump()
+        scan_dict['created_at'] = scan_dict['created_at'].isoformat()
+        scan_dict['completed_at'] = scan_dict['completed_at'].isoformat()
+        await db.evidence_scans.insert_one(scan_dict)
+        
+        # Store evidence items
+        for ev in evidence_list:
+            ev_dict = ev.model_dump()
+            ev_dict['collected_at'] = ev_dict['collected_at'].isoformat()
+            await db.evidence.insert_one(ev_dict)
+        
+        # Store findings
+        for finding in findings_list:
+            finding_dict = finding.model_dump()
+            finding_dict['created_at'] = finding_dict['created_at'].isoformat()
+            await db.findings.insert_one(finding_dict)
+        
+        # Cleanup
+        shutil.rmtree(repo_path, ignore_errors=True)
+        temp_zip.unlink(missing_ok=True)
+        
+        return RepoScanResponse(
+            scan_id=scan_id,
+            status="completed",
+            message=f"Scan completed. Found {len(evidence_list)} evidence items across {len(findings_list)} controls.",
+            estimated_duration_seconds=0
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in repo scan: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Repo scan failed: {str(e)}")
+
+
+@api_router.get("/compliance/scan/repo/{scan_id}", response_model=EvidenceScanResult)
+async def get_repo_scan_result(scan_id: str):
+    """Get evidence scan results"""
+    try:
+        # Get scan
+        scan = await db.evidence_scans.find_one({"id": scan_id}, {"_id": 0})
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Convert datetime strings
+        scan['created_at'] = datetime.fromisoformat(scan['created_at'])
+        if scan.get('completed_at'):
+            scan['completed_at'] = datetime.fromisoformat(scan['completed_at'])
+        
+        # Get findings
+        findings = await db.findings.find({"scan_id": scan_id}, {"_id": 0}).to_list(100)
+        for finding in findings:
+            finding['created_at'] = datetime.fromisoformat(finding['created_at'])
+        
+        # Group findings by article
+        findings_by_article = {}
+        critical_findings = []
+        
+        for finding in findings:
+            article = finding['article']
+            if article not in findings_by_article:
+                findings_by_article[article] = []
+            findings_by_article[article].append(finding)
+            
+            if finding.get('severity') in ['critical', 'high'] and finding['status'] != 'compliant':
+                critical_findings.append(finding)
+        
+        # Generate recommendations
+        recommendations = []
+        for finding in findings:
+            if finding['status'] != 'compliant' and finding.get('recommendation'):
+                recommendations.append(finding['recommendation'])
+        
+        # Generate summary
+        coverage_pct = scan['coverage']['coverage_percentage']
+        summary = f"Repository scan completed with {coverage_pct}% compliance coverage. " \
+                  f"Checked {len(findings)} controls across {len(findings_by_article)} articles."
+        
+        return EvidenceScanResult(
+            scan=scan,
+            findings_by_article=findings_by_article,
+            critical_findings=critical_findings[:10],
+            recommendations=recommendations[:10],
+            summary=summary
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error fetching repo scan result: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch scan result: {str(e)}")
+
+
+@api_router.get("/controls")
+async def get_controls():
+    """Get all available controls"""
+    try:
+        controls = get_all_controls()
+        stats = get_control_statistics()
+        
+        return {
+            "controls": [c.model_dump() for c in controls],
+            "statistics": stats,
+            "total": len(controls)
+        }
+    except Exception as e:
+        logging.error(f"Error fetching controls: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch controls: {str(e)}")
+
+
 # ============= UPDATED COMPLIANCE SCAN ENDPOINTS =============
 
 
