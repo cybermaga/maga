@@ -6,6 +6,7 @@ import ReportView from "@/pages/ReportView";
 import RepoScanUpload from "@/pages/RepoScanUpload";
 import RepoScanResults from "@/pages/RepoScanResults";
 import ApiInfo from "@/pages/ApiInfo";
+import NetworkDebug from "@/pages/NetworkDebug";
 import { Toaster } from "@/components/ui/sonner";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path="/scan/repo/:scanId" element={<RepoScanResults />} />
           <Route path="/report/:reportId" element={<ReportView />} />
           <Route path="/api-info" element={<ApiInfo />} />
+          <Route path="/debug" element={<NetworkDebug />} />
         </Routes>
       </BrowserRouter>
     </div>
