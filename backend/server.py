@@ -1,5 +1,4 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Response, UploadFile, File, Form
-from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -10,21 +9,16 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Optional
 import uuid
 from datetime import datetime, timezone
-import hashlib
+import tempfile
 import shutil
-import zipfile
 
 # Import SDK modules
 from sdk import RiskClassifier, ComplianceChecker, DocumentAnalyzer, ReportGenerator
 
-# Import new models and config
-from models import (
-    Artifact, ArtifactType, Evidence, EvidenceStatus,
-    ArtifactUploadResponse, EvidenceRunRequest, EvidenceRunResponse, EvidenceSummary
-)
-from config import MONGO_URL, DB_NAME, ARTIFACTS_DIR, EVIDENCE_DIR, ALLOWED_ORIGINS, MAX_UPLOAD_SIZE
-from mapping import get_articles_for_rule, get_all_rules
-from worker import celery_app
+# Import evidence-based scanning modules
+from evidence_models import EvidenceScan, Finding, Evidence, CoverageStats
+from repo_scanner import RepositoryScanner
+from controls_definitions import controls_to_dict
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -44,6 +38,9 @@ risk_classifier = RiskClassifier()
 compliance_checker = ComplianceChecker()
 document_analyzer = DocumentAnalyzer()
 report_generator = ReportGenerator()
+
+# Initialize evidence-based scanner
+repo_scanner = RepositoryScanner()
 
 
 # Define Models
@@ -464,6 +461,135 @@ async def delete_report(report_id: str):
     except Exception as e:
         logging.error(f"Error deleting report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting report: {str(e)}")
+
+
+# ============================================
+# Evidence-Based Repository Scanning Endpoints
+# ============================================
+
+@api_router.post("/compliance/scan/repo")
+async def scan_repository(
+    zip_file: UploadFile = File(...),
+    system_name: str = Form(...)
+):
+    """
+    Upload and scan a repository ZIP file for EU AI Act compliance.
+    Returns evidence-based analysis with findings and coverage statistics.
+    """
+    try:
+        # Validate file type
+        if not zip_file.filename.endswith('.zip'):
+            raise HTTPException(status_code=400, detail="File must be a ZIP archive")
+        
+        # Save uploaded file to temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
+            shutil.copyfileobj(zip_file.file, temp_file)
+            temp_path = temp_file.name
+        
+        try:
+            # Scan the repository
+            scan_result = repo_scanner.scan_zip(temp_path, system_name)
+            
+            # Convert to dict for MongoDB storage
+            scan_dict = scan_result.model_dump()
+            scan_dict['timestamp'] = scan_dict['timestamp'].isoformat()
+            
+            # Store in database
+            await db.evidence_scans.insert_one(scan_dict)
+            
+            logging.info(f"Repository scan completed for {system_name}: {scan_result.id}")
+            
+            return scan_result
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error scanning repository: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error scanning repository: {str(e)}")
+
+
+@api_router.get("/compliance/scan/repo/{scan_id}")
+async def get_repository_scan(scan_id: str):
+    """Get a specific repository scan result by ID"""
+    try:
+        scan = await db.evidence_scans.find_one({"id": scan_id}, {"_id": 0})
+        
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Convert ISO string timestamp back to datetime
+        if isinstance(scan.get('timestamp'), str):
+            scan['timestamp'] = datetime.fromisoformat(scan['timestamp'])
+        
+        return scan
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error fetching scan: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching scan: {str(e)}")
+
+
+@api_router.get("/compliance/scan/repo")
+async def get_all_repository_scans():
+    """Get all repository scan results"""
+    try:
+        scans = await db.evidence_scans.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+        
+        # Convert ISO string timestamps back to datetime objects
+        for scan in scans:
+            if isinstance(scan.get('timestamp'), str):
+                scan['timestamp'] = datetime.fromisoformat(scan['timestamp'])
+        
+        return scans
+    except Exception as e:
+        logging.error(f"Error fetching scans: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching scans: {str(e)}")
+
+
+@api_router.delete("/compliance/scan/repo/{scan_id}")
+async def delete_repository_scan(scan_id: str):
+    """Delete a repository scan"""
+    try:
+        result = await db.evidence_scans.delete_one({"id": scan_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        return {"message": "Scan deleted successfully", "id": scan_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting scan: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting scan: {str(e)}")
+
+
+@api_router.get("/controls")
+async def get_controls():
+    """Get all defined compliance controls"""
+    try:
+        controls = controls_to_dict()
+        return {
+            "total": len(controls),
+            "controls": controls
+        }
+    except Exception as e:
+        logging.error(f"Error fetching controls: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching controls: {str(e)}")
+
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0.0"
+    }
 
 
 # Include the router in the main app

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Shield, TrendingUp, AlertCircle } from "lucide-react";
+import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code } from "lucide-react";
 import { toast } from "sonner";
 import { complianceApi } from "@/lib/api";
 
@@ -30,7 +30,14 @@ const Dashboard = () => {
       calculateStats(response.data);
     } catch (error) {
       console.error("Error fetching reports:", error);
-      toast.error("Failed to load reports");
+      // Don't show error toast on initial load - just set empty reports
+      setReports([]);
+      setStats({ total: 0, compliant: 0, partial: 0, nonCompliant: 0 });
+      
+      // Only show error if it's not a network/connection issue
+      if (error.response && error.response.status !== 404) {
+        toast.error("Failed to load reports");
+      }
     } finally {
       setLoading(false);
     }
@@ -102,14 +109,25 @@ const Dashboard = () => {
                 <p className="text-sm text-slate-600 mt-1" data-testid="app-subtitle">EU AI Act Compliance Analysis Tool</p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate('/scan/new')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base font-semibold rounded-lg"
-              data-testid="new-scan-button"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              New Compliance Scan
-            </Button>
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => navigate('/scan/repo')}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-6 text-base font-semibold rounded-lg"
+                data-testid="repo-scan-button"
+              >
+                <Upload className="mr-2 h-5 w-5" />
+                Scan Repository
+              </Button>
+              <Button
+                onClick={() => navigate('/scan/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base font-semibold rounded-lg"
+                data-testid="new-scan-button"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                New Compliance Scan
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -182,10 +200,23 @@ const Dashboard = () => {
         {/* Reports List */}
         <Card className="border-slate-200" data-testid="reports-list-card">
           <CardHeader>
-            <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Recent Compliance Scans
-            </CardTitle>
-            <CardDescription>View and manage your AI system compliance reports</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Recent Compliance Scans
+                </CardTitle>
+                <CardDescription>View and manage your AI system compliance reports</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/api-info')}
+                className="border-slate-300 text-slate-700"
+                data-testid="api-info-button"
+              >
+                <Code className="mr-2 h-4 w-4" />
+                API Docs
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
