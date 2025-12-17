@@ -1,7 +1,31 @@
+import os
+from models import EvidenceRunRequest, EvidenceRunResponse, ArtifactUploadResponse
+from pydantic import BaseModel
+from typing import Any, Dict, Optional
+
+class GenericResponse(BaseModel):
+    status: str = "ok"
+    message: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+
+EvidenceRunResponse = GenericResponse
+EvidenceSummary = GenericResponse
+List = GenericResponse
+# END AUTO-GENERATED RESPONSE MODELS
+
+from pydantic import BaseModel
+from typing import Optional, Any, Dict
+
+class ArtifactUploadResponse(BaseModel):
+    artifact_id: str
+    status: str = "uploaded"
+    filename: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
 from fastapi import FastAPI, APIRouter, HTTPException, Response, UploadFile, File, Form
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 import os
 import logging
 from pathlib import Path
@@ -24,6 +48,10 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
+import os
+
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://mongodb:27017")
+DB_NAME = os.getenv("DB_NAME", "emergent")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
