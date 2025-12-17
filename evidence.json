@@ -1,4 +1,0 @@
-{
-  "scan_id": "7171afd4-804c-4821-81ca-9296fddc4666",
-  "rules": ["deps", "bandit", "onnx_meta", "dataset_sanity"]
-}
