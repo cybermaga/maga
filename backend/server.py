@@ -1,4 +1,11 @@
+import zipfile
+import hashlib
 import os
+from pathlib import Path
+ARTIFACTS_DIR = Path(os.getenv("ARTIFACTS_DIR", "/app/data/artifacts"))
+ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", str(100 * 1024 * 1024)))  # 100MB default
+from models import ArtifactType, Artifact
 from models import EvidenceRunRequest, EvidenceRunResponse, ArtifactUploadResponse
 from pydantic import BaseModel
 from typing import Any, Dict, Optional

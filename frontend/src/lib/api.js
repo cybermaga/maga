@@ -1,127 +1,168 @@
-// frontend/src/lib/api.js
+/**
+ * frontend/src/lib/api.js
+ * Single source of truth for frontend API helpers.
+ * Goal: keep exports stable so the app compiles.
+ */
 
 const API_BASE =
   process.env.REACT_APP_API_BASE_URL ||
   process.env.REACT_APP_API_URL ||
+  process.env.REACT_APP_BACKEND_URL ||
   "http://localhost:8000/api";
 
 async function request(path, opts = {}) {
-  const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/api") ? path.slice(4) : path}`;
+  const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 
   const headers = opts.headers || {};
   const isFormData = typeof FormData !== "undefined" && opts.body instanceof FormData;
 
   const finalOpts = {
     ...opts,
-    headers: isFormData
-      ? headers
-      : {
-          "Content-Type": "application/json",
-          ...headers,
-        },
+    headers: isFormData ? headers : { "Content-Type": "application/json", ...headers },
   };
 
   const res = await fetch(url, finalOpts);
-  const text = await res.text();
-  let data = null;
 
+  // Try to parse JSON; fall back to text
+  const text = await res.text();
+  let payload;
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch (e) {
-    data = text;
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = text;
   }
 
   if (!res.ok) {
-    const msg =
-      (data && data.detail) ||
-      (typeof data === "string" && data) ||
-      `HTTP ${res.status}`;
-    throw new Error(msg);
+    const msg = typeof payload === "string" ? payload : (payload?.detail || payload?.message || JSON.stringify(payload));
+    throw new Error(msg || `API error ${res.status}`);
   }
 
-  return data;
+  return payload;
 }
 
-/**
- * What your UI expects (based on import errors):
- * - complianceAPI, complianceApi
- * - artifactsApi
- * - evidenceApi
- * - systemAPI
- * - repoScanAPI
- * - validateZipFile
- */
+/** Utilities used by UI */
+export function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) {
+    n = n / 1024;
+    i++;
+  }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
 
-// ---- Compliance ----
-export const complianceApi = {
-  health: async () => request("/health", { method: "GET" }),
+export function validateZipFile(file) {
+  if (!file) return { valid: false, error: "No file selected" };
+
+  const nameOk = (file.name || "").toLowerCase().endsWith(".zip");
+  const typeOk =
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed" ||
+    file.type === "" /* some browsers */;
+
+  if (!nameOk && !typeOk) return { valid: false, error: "Please select a .zip file" };
+
+  const max = 100 * 1024 * 1024; // 100MB
+  if (file.size > max) return { valid: false, error: "ZIP file is too large (max 100MB)" };
+
+  return { valid: true, error: "" };
+}
+
+/** Repo Scan API (used by RepoScanUpload page) */
+export const repoScanAPI = {
+  uploadAndScan: (zipFile, systemName, onProgress) =>
+    new Promise((resolve, reject) => {
+      try {
+        const fd = new FormData();
+        fd.append("zip_file", zipFile);
+        fd.append("system_name", systemName);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}/compliance/scan/repo`);
+
+        xhr.upload.onprogress = (evt) => {
+          if (!onProgress) return;
+          if (evt.lengthComputable) {
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            onProgress(pct);
+          }
+        };
+
+        xhr.onload = () => {
+          try {
+            const text = xhr.responseText || "";
+            let payload = null;
+            try {
+              payload = text ? JSON.parse(text) : null;
+            } catch {
+              payload = text;
+            }
+
+            if (xhr.status >= 200 && xhr.status < 300) return resolve(payload);
+
+            const msg =
+              typeof payload === "string"
+                ? payload
+                : payload?.detail || payload?.message || JSON.stringify(payload);
+            return reject(new Error(msg || `Upload failed (${xhr.status})`));
+          } catch (e) {
+            return reject(e);
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(fd);
+      } catch (e) {
+        reject(e);
+      }
+    }),
+
+  getResult: (id) => request(`/compliance/scan/repo/${id}`),
 };
-export const complianceAPI = complianceApi;
 
-// ---- Artifacts ----
+/** Artifacts API (used by ArtifactUploader component) */
 export const artifactsApi = {
-  upload: async (file, type, scanId) => {
+  upload: (file, type, scanId) => {
     const fd = new FormData();
+    fd.append("type", type);
     fd.append("file", file);
-    if (type) fd.append("type", type);
     if (scanId) fd.append("scan_id", scanId);
     return request("/artifacts/upload", { method: "POST", body: fd });
   },
 };
 
-// ---- Evidence ----
+/** Evidence API (used by EvidenceTab component). Endpoints may be WIP; keep exports stable. */
 export const evidenceApi = {
-  getEvidence: async (scanId) =>
-    request(`/evidence/${encodeURIComponent(scanId)}`, { method: "GET" }),
-
-  runAnalyzers: async (scanId, analyzers = []) =>
-    request("/evidence/run", {
-      method: "POST",
-      body: JSON.stringify({ scan_id: scanId, analyzers }),
-    }),
-
-  getRawEvidence: async (scanId, evidenceId) =>
-    request(
-      `/evidence/${encodeURIComponent(scanId)}/${encodeURIComponent(
-        evidenceId
-      )}/raw`,
-      { method: "GET" }
-    ),
+  getEvidence: (scanId) => request(`/compliance/scan/repo/${scanId}`),
+  runAnalyzers: (scanId, analyzers) =>
+    request("/evidence/run", { method: "POST", body: JSON.stringify({ scan_id: scanId, analyzers }) }),
+  getRawEvidence: (scanId, evidenceId) => request(`/evidence/${scanId}/${evidenceId}`),
 };
 
-// ---- System (NetworkDebug.js expects these functions) ----
+/** System API */
 export const systemAPI = {
-  getInfo: async () => request("/health", { method: "GET" }),
-  healthCheck: async () => request("/health", { method: "GET" }),
-  getControls: async () => request("/health", { method: "GET" }),
+  health: () => request("/health", { method: "GET" }),
 };
 
-// ---- Repo scan (stub to satisfy imports; implement later if endpoint exists) ----
-export const repoScanAPI = {
-  scan: async () => {
-    throw new Error("repoScanAPI.scan is not implemented yet");
-  },
+/** Reports */
+export async function getReports() {
+  return request("/reports", { method: "GET" });
+}
+
+/**
+ * Compatibility exports — different files may import different casing.
+ * Keep both, to stop build-breaking import errors.
+ */
+export const complianceAPI = {
+  getReports,
+  health: () => request("/health", { method: "GET" }),
 };
 
-// ---- validateZipFile (stub; components expect it) ----
-async function validateZipFile() {
-  // Minimal: always "valid". Replace with real checks later.
-  return { ok: true };
-}
-// ---- formatFileSize (helper) ----
-function formatFileSize(bytes) {
-  if (bytes === undefined || bytes === null) return "";
-  const n = Number(bytes);
-  if (Number.isNaN(n)) return String(bytes);
-  if (n < 1024) return `${n} B`;
-  const kb = n / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  const mb = kb / 1024;
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  const gb = mb / 1024;
-  return `${gb.toFixed(1)} GB`;
-}
+export const complianceApi = complianceAPI;
 
-export { formatFileSize };
-export { request };
-export { validateZipFile };
+// Also keep older helper name if something imports it:
+export async function uploadRepoScan(zipFile, systemName) {
+  return repoScanAPI.uploadAndScan(zipFile, systemName);
+}
