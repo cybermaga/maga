@@ -37,29 +37,29 @@ Frontend was making requests to `localhost` which doesn't work in Preview enviro
 ## 🔗 Useful URLs for Preview
 
 ### Documentation
-- **Swagger API Docs**: `https://compliance-buddy-17.preview.emergentagent.com/docs`
-- **ReDoc**: `https://compliance-buddy-17.preview.emergentagent.com/redoc`
+- **Swagger API Docs**: `https://aicomply-1.preview.emergentagent.com/docs`
+- **ReDoc**: `https://aicomply-1.preview.emergentagent.com/redoc`
 
 ### Debug Pages
-- **API Info**: `https://compliance-buddy-17.preview.emergentagent.com/api-info`
-- **Network Debug**: `https://compliance-buddy-17.preview.emergentagent.com/debug`
+- **API Info**: `https://aicomply-1.preview.emergentagent.com/api-info`
+- **Network Debug**: `https://aicomply-1.preview.emergentagent.com/debug`
 
 ### Test Endpoints
 ```bash
 # Health check
-curl https://compliance-buddy-17.preview.emergentagent.com/api/health
+curl https://aicomply-1.preview.emergentagent.com/api/health
 
 # Get API info
-curl https://compliance-buddy-17.preview.emergentagent.com/api/
+curl https://aicomply-1.preview.emergentagent.com/api/
 
 # Get controls
-curl https://compliance-buddy-17.preview.emergentagent.com/api/controls
+curl https://aicomply-1.preview.emergentagent.com/api/controls
 
 # Get reports
-curl https://compliance-buddy-17.preview.emergentagent.com/api/compliance/reports
+curl https://aicomply-1.preview.emergentagent.com/api/compliance/reports
 
 # Get repo scans
-curl https://compliance-buddy-17.preview.emergentagent.com/api/compliance/scan/repo
+curl https://aicomply-1.preview.emergentagent.com/api/compliance/scan/repo
 ```
 
 ---
@@ -68,20 +68,20 @@ curl https://compliance-buddy-17.preview.emergentagent.com/api/compliance/scan/r
 
 ### 1. Check if Backend is Working
 
-Open: `https://compliance-buddy-17.preview.emergentagent.com/docs`
+Open: `https://aicomply-1.preview.emergentagent.com/docs`
 
 If this loads, backend is fine.
 
 ### 2. Check Network Requests
 
-Navigate to: `https://compliance-buddy-17.preview.emergentagent.com/debug`
+Navigate to: `https://aicomply-1.preview.emergentagent.com/debug`
 
 Click "Run All Tests" to see which endpoints fail.
 
 ### 3. Check Browser Console
 
 Open DevTools (F12) and look for:
-- ✅ `API Base URL: https://compliance-buddy-17.preview.emergentagent.com/api`
+- ✅ `API Base URL: https://aicomply-1.preview.emergentagent.com/api`
 - ❌ Any CORS errors
 - ❌ Any 404/500 errors
 - ❌ Network timeouts
@@ -108,7 +108,7 @@ Open DevTools (F12) and look for:
 
 **Frontend `.env`:**
 ```
-REACT_APP_BACKEND_URL=https://compliance-buddy-17.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://aicomply-1.preview.emergentagent.com
 ```
 
 **API Base in code:**

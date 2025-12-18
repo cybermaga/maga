@@ -1,0 +1,381 @@
+<analysis>**original_problem_statement:**
+The user wants to build a full-stack application called Emergent AI Compliance to automatically evaluate AI systems for compliance with the EU AI Act.
+
+PRODUCT REQUIREMENTS:
+1.  **Initial MVP (Questionnaire-based):** An SDK and web app to analyze AI systems based on uploaded metadata and documentation, classify risk, check for key compliance elements, and generate PDF/HTML reports. (This phase is largely complete).
+2.  **Evidence-based Scanning:** A major pivot to a real scanning system. This involves:
+    *   Implementing a new endpoint () that accepts a  of a code repository.
+    *   Running automated checks (e.g., presence of README, tests) to generate findings and evidence.
+    *   A new UI flow to upload a repository, trigger the scan, and display detailed results. (This is implemented).
+3.  **Bug Fix (Current task):** The user has reported a critical bug where the original questionnaire-based scan is failing. When the Run Compliance Scan button is clicked, a Failed to create compliance scan error appears. This is the current blocking issue.
+4.  **Future Requirements:** Implement a CLI tool () and a corresponding GitHub Action.
+
+**User's preferred language**: The user communicates in both **Russian** and **English**. The next agent MUST respond in the language the user uses for each message.
+
+**what currently exists?**
+A full-stack application with a FastAPI backend, React frontend, and MongoDB, fully containerized with Docker. The application has two main features:
+1.  A questionnaire-based compliance scan (currently broken).
+2.  An evidence-based repository scan (backend is functional, UI is complete and was tested).
+The project code is now located in . The agent has fixed incorrect API client usage in  and  as a potential solution to the reported bug, but this fix has not been tested.
+
+**Last working item**:
+*   **Last item agent was working:** Debugging a bug reported by the user: Failed to create compliance scan. The agent identified that  and  were using  directly instead of the centralized API client from . The agent has now edited these files to use the correct API client.
+*   **Status:** IN PROGRESS
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** Frontend testing agent. The agent should instruct the testing agent to navigate to the questionnaire scan page, fill the form, click Run Compliance Scan, and verify that the scan is created successfully without errors.
+*   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+*   **Issue 1:** Failed to create compliance scan on questionnaire form (P0)
+
+**Issues Detail:**
+*   **Issue 1:**
+    *   **Description:** When the user clicks the Run Compliance Scan button on the original documentation/questionnaire page, the UI shows a Failed to create compliance scan toast notification. The user's screenshot indicates a client-side error: . This blocks the questionnaire-based scanning feature.
+    *   **Attempted fixes:** The agent identified that  and  were not importing and using the API client from  correctly. The agent has applied edits to both files to import the  object and use it for network requests (e.g., ).
+    *   **Next debug checklist:**
+        1.  Restart the frontend service using frontend: ERROR (not running)
+frontend: ERROR (abnormal termination) to ensure the latest code changes are active.
+        2.  Use the  to perform an end-to-end test of the failing flow. The test should:
+            *   Navigate to the page with the Compliance Documentation form.
+            *   Fill in the form fields.
+            *   Click the Run Compliance Scan button.
+            *   Assert that no Failed to create compliance scan toast appears.
+            *   Assert that the user is navigated to the results page or a success message is shown.
+        3.  If the test fails, inspect the browser console log from the test report for new errors.
+        4.  Also, check the backend logs (==> /var/log/supervisor/backend.err.log <==
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1628]
+INFO:     Started server process [1707]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1707]
+INFO:     Started server process [1723]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1723]
+INFO:     Started server process [1798]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1798]
+INFO:     Stopping reloader process [307]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [1840] using WatchFiles
+INFO:     Started server process [1842]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+2025-12-14 22:44:49,724 - repo_scanner - INFO - Starting scan of /tmp/tmp3b_e24mu.zip for system: Demo AI System
+2025-12-14 22:44:49,729 - repo_scanner - INFO - Scan completed: 19 findings, 6 evidence items
+2025-12-14 22:44:49,766 - root - INFO - Repository scan completed for Demo AI System: ee7004a5-59f6-420f-91a9-7327488de3e3
+2025-12-14 22:46:16,731 - repo_scanner - INFO - Starting scan of /tmp/tmpgkxxpdvg.zip for system: Test AI System via Backend API
+2025-12-14 22:46:16,733 - repo_scanner - INFO - Scan completed: 19 findings, 6 evidence items
+2025-12-14 22:46:16,735 - root - INFO - Repository scan completed for Test AI System via Backend API: 2af4da6e-4a74-4c91-a1bd-e306625567fc
+2025-12-14 22:47:33,653 - repo_scanner - INFO - Starting scan of /tmp/tmprvjvg7hi.zip for system: Test AI System via UI
+2025-12-14 22:47:33,656 - repo_scanner - INFO - Scan completed: 19 findings, 6 evidence items
+2025-12-14 22:47:33,658 - root - INFO - Repository scan completed for Test AI System via UI: e833acab-2603-46d0-8d1f-faf042799afc
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [66]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [67]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [67]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [65]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [28] using WatchFiles
+INFO:     Started server process [45]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [60]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [29] using WatchFiles
+INFO:     Started server process [73]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [28] using WatchFiles
+INFO:     Started server process [64]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [33] using WatchFiles
+INFO:     Started server process [71]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+==> /var/log/supervisor/backend.out.log <==
+INFO:     10.64.128.229:39642 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.138.171:44728 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:33450 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.136.155:53312 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:54742 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.10:49316 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.11:55534 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.10:49316 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.96:40524 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.11:46990 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.10:60276 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:35686 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.96:39566 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:35540 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:57882 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.94:46286 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.137.70:58576 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.140.11:38506 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40214 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.135.230:49364 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.128.201:53430 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.137.94:35786 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.187:50764 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.187:36244 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.187:36244 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38178 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.156.79:59966 - "POST /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.156.94:39556 - "GET /api/compliance/scan/repo/210f824f-28dc-4bb5-bf45-833df3e83028 HTTP/1.1" 200 OK
+INFO:     10.64.139.40:47058 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.168:57084 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.168:57084 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.94:38604 - "GET /api/health HTTP/1.1" 404 Not Found
+INFO:     10.64.129.19:57766 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.162.106:54646 - "POST /api/compliance/scan/repo HTTP/1.1" 404 Not Found
+INFO:     10.64.129.19:35178 - "POST /api/compliance/scan/repo HTTP/1.1" 404 Not Found
+INFO:     10.64.156.94:42892 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.129.7:48892 - "GET /api/controls HTTP/1.1" 200 OK
+INFO:     10.64.139.40:54978 - "POST /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.156.94:35130 - "GET /api/compliance/scan/repo/ee7004a5-59f6-420f-91a9-7327488de3e3 HTTP/1.1" 200 OK
+INFO:     10.64.156.79:44974 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.129.19:47888 - "GET /api/controls HTTP/1.1" 200 OK
+INFO:     10.64.139.40:58678 - "POST /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.130.168:36396 - "GET /api/compliance/scan/repo/2af4da6e-4a74-4c91-a1bd-e306625567fc HTTP/1.1" 200 OK
+INFO:     10.64.130.187:45032 - "GET /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.139.40:58678 - "POST /api/compliance/scan/repo HTTP/1.1" 400 Bad Request
+INFO:     10.64.139.40:58678 - "POST /api/compliance/scan/repo HTTP/1.1" 422 Unprocessable Entity
+INFO:     10.64.162.106:39692 - "GET /api/compliance/scan/repo/nonexistent-scan-id HTTP/1.1" 404 Not Found
+INFO:     10.64.156.94:39110 - "DELETE /api/compliance/scan/repo/2af4da6e-4a74-4c91-a1bd-e306625567fc HTTP/1.1" 200 OK
+INFO:     10.64.128.44:39126 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.94:40016 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.162.106:41580 - "POST /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.162.106:41580 - "GET /api/compliance/scan/repo/e833acab-2603-46d0-8d1f-faf042799afc HTTP/1.1" 200 OK
+INFO:     10.64.162.106:41580 - "GET /api/compliance/scan/repo/e833acab-2603-46d0-8d1f-faf042799afc HTTP/1.1" 200 OK
+INFO:     10.64.128.44:51188 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.128.44:51188 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.128.44:46934 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.19:55098 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.7:49948 - "GET /api/compliance/reports/20fb241f-6bb9-437d-91b1-794aaac5fcd6 HTTP/1.1" 200 OK
+INFO:     10.64.156.79:53174 - "GET /api/compliance/reports/20fb241f-6bb9-437d-91b1-794aaac5fcd6 HTTP/1.1" 200 OK
+INFO:     10.64.156.79:44176 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.94:41494 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.19:33902 - "GET /api/compliance/scan/repo/ee7004a5-59f6-420f-91a9-7327488de3e3 HTTP/1.1" 200 OK
+INFO:     10.64.156.94:41494 - "GET /api/compliance/scan/repo/ee7004a5-59f6-420f-91a9-7327488de3e3 HTTP/1.1" 200 OK
+INFO:     10.64.129.19:34116 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.79:59914 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.79:41400 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.79:54180 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.156.79:48786 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.94:53108 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.129.19:36018 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.128.44:45602 - "GET /api/controls HTTP/1.1" 200 OK
+INFO:     10.64.129.19:54788 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.7:39832 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.19:33990 - "GET /api-info HTTP/1.1" 404 Not Found
+INFO:     10.64.156.79:47014 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.129.7:37866 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.19:55638 - "GET /api/docs HTTP/1.1" 404 Not Found
+INFO:     10.64.156.79:58846 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.129.7:57434 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.129.19:39606 - "GET /api/controls HTTP/1.1" 200 OK
+INFO:     10.64.156.79:46558 - "GET /api-info HTTP/1.1" 404 Not Found
+INFO:     10.64.156.79:36620 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.128.44:38820 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.64.162.106:35866 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.64.139.40:46088 - "GET /api/controls HTTP/1.1" 200 OK
+INFO:     10.64.139.40:46088 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.139.40:46088 - "GET /api/compliance/scan/repo HTTP/1.1" 200 OK
+INFO:     10.64.130.187:51458 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.168:42252 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.168:42252 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.130.168:38666 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.162.106:47624 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.129.7:58764 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.79:36124 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.162.106:38452 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.128.44:35692 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.139.9:47578 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.156.79:39486 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.162.242:37972 - "GET /api/compliance/reports HTTP/1.1" 200 OK
+INFO:     10.64.139.17:54170 - "GET /api/compliance/reports HTTP/1.1" 200 OK) for any errors related to the  endpoint.
+    *   **Why fix this issue and what will be achieved with the fix?** This is a critical bug blocking a core feature of the application. Fixing it will restore the functionality of the questionnaire-based compliance scan.
+    *   **Status:** IN PROGRESS
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** both
+    *   **Blocked on other issue:** None
+
+**In progress Task List**:
+None. The primary focus is the bug fix.
+
+**Upcoming and Future Tasks**
+*   **Upcoming Tasks:**
+    *   (P1) Create End-to-End Test Script: Create a script to automate the testing of the full evidence-scan flow (upload demo zip -> check backend -> verify results).
+*   **Future Tasks:**
+    *   (P1) Implement CLI Scanner (): Create a local CLI tool that scans a repository path and posts the results to the backend API.
+    *   (P2) Create GitHub Action: Build a GitHub Action that uses the  CLI to run scans on pull requests.
+    *   (P2) Expand Analysis Controls: Enhance  to move from simple file presence checks to more sophisticated static analysis (e.g., using usage: bandit [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES] [-c CONFIG_FILE]
+              [-p PROFILE] [-t TESTS] [-s SKIPS]
+              [-l | --severity-level {all,low,medium,high}]
+              [-i | --confidence-level {all,low,medium,high}]
+              [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+              [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d] [-q]
+              [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+              [--ini INI_PATH] [--exit-zero] [--version]
+              [targets ...], Name      Version ID                  Fix Versions
+--------- ------- ------------------- ------------
+brotli    1.1.0   GHSA-2qfp-q593-8484 1.2.0
+ecdsa     0.19.1  GHSA-wj6h-64fc-37mp
+filelock  3.20.0  GHSA-w853-jp5j-5j7f 3.20.1
+fonttools 4.60.1  GHSA-768j-98cg-p3fv 4.60.2
+pymongo   4.5.0   GHSA-m87m-mmvp-v9qm 4.6.3
+starlette 0.37.2  GHSA-f96h-pmfr-66vw 0.40.0
+starlette 0.37.2  GHSA-2c2j-9gv5-cj73 0.47.2
+urllib3   2.5.0   GHSA-gm62-xv2j-4w53 2.6.0
+urllib3   2.5.0   GHSA-2xpw-w6gg-jr37 2.6.0).
+    *   (P2) Support Git URL Scanning: Modify the backend to accept a Git repository URL as an input for scans.
+
+**Completed work in this session**
+*   **Bug Fix (Attempted):** Corrected the API client usage in  and  to resolve the Failed to create compliance scan bug.
+*   **Feature Implementation (Previous Sessions):**
+    *   Built the evidence-based scanning backend, including new models (), control definitions, a repository scanner, and API endpoints ().
+    *   Built the evidence-based scanning frontend, including pages for upload () and results ().
+    *   Created debug pages (, ) and added graceful error handling to the UI.
+    *   Set up a complete Docker environment for the project in the  directory.
+
+**Earlier issues found/mentioned but not fixed**
+*   **Issue 1: Docker Environment Untested**
+    *   **Debug checklist:** The agent's environment lacks , so a live test is not possible. The next agent should ensure the Docker files (, s) are syntactically correct and consistently configured before handing off to the user. The user will perform the final test.
+    *   **Why to solve this issue and what will be achieved with this?** To provide the user with a reliable, one-command setup () for running the application locally.
+    *   **Should Test frontend/backend/both after fix:** N/A (User will test)
+    *   **Is recurring issue?** Y
+
+**Known issue recurrence from previous fork**
+None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+*   **Backend:** FastAPI, Pydantic, Motor (async MongoDB)
+*   **Frontend:** React, Tailwind CSS, shadcn/ui, Axios
+*   **Core Logic:**
+    *   Questionnaire-based compliance analysis.
+    *   Static analysis of code repositories to find evidence of compliance.
+*   **DevOps:** Docker, Docker Compose
+
+**key DB schema**
+*   **compliance_scans:** Stores results from the questionnaire-based scans.
+*   **evidence_scans:** Stores results of repository scans, including coverage stats, findings, and evidence items.
+
+**changes in tech stack**
+None in the last session. Previously, Celery and Redis were added but are not the focus of the current bug.
+
+**All files of reference**
+*   **Files Modified for Bug Fix:**
+    *   : Changed to use the central API client.
+    *   : Changed to use the central API client.
+*   **Key Related Files:**
+    *   : The central API client that should be used by all components.
+    *   : Contains the  endpoint that is being called.
+
+**Areas that need refactoring**:
+*   The application has two parallel scanning features (questionnaire and repo scan). They could be integrated more cleanly to improve user experience.
+
+**key api endpoints**
+*   : (Failing from UI) Creates a scan based on questionnaire/documentation data.
+*   : Fetches all questionnaire-based scan reports.
+*   : (Working) Uploads a repository ZIP and triggers an evidence-based scan.
+*   : (Working) Fetches the results of a specific repository scan.
+*   : (Working) Returns the list of all defined compliance controls.
+
+**Critical Info for New Agent**
+*   **You are in a debugging session.** The top priority is to fix the Failed to create compliance scan bug reported by the user.
+*   The project is located in . All file paths should be relative to this directory.
+*   The agent has already implemented a potential fix by modifying  and . Your immediate task is to **test this fix**.
+*   Do not get distracted by other features. Focus solely on resolving the reported bug and verifying the fix.
+
+**documents created in this job**
+*   /app/PREVIEW_DEBUG.md
+*   /app/EVIDENCE_SCAN_COMPLETE.md
+*   /root/maga/README.md
+*   /root/maga/QUICKSTART.sh
+
+**Last 10 User Messages and any pending user messages**
+1.  **User (RU):** Asks to sync changes from the preview environment to the local  project.
+2.  **Agent:** Acknowledges and starts the sync process.
+3.  **User (RU):** Re-iterates the sync request, clarifying the required endpoints and frontend fixes.
+4.  **Agent:** Confirms all requested endpoints and UI pages are already present in , effectively stating the sync is complete.
+5.  **User (EN):** **Submits a critical bug report.** Failed to create compliance scan error when using the questionnaire form. Provides a screenshot of the UI error, local git status, and logs. This is the current active task.
+6.  **Agent:** Identifies the error from the screenshot: fa.createScan is not a function, pointing to an issue with the API client.
+7.  **Agent:** Inspects  and finds the root cause: the component uses  directly instead of the  client.
+8.  **Agent:** Applies a fix to  to use the  client.
+9.  **Agent:** Proactively checks and applies the same fix to .
+10. **Agent:** Prepares to summarize the fix.
+
+**Project Health Check:**
+*   **Broken:**
+    *   The questionnaire-based scan creation flow is non-functional from the UI due to the reported bug.
+*   **Mocked:**
+    *   The core analysis logic in  is still a placeholder (checking for file existence).
+
+**3rd Party Integrations**
+None.
+
+**Testing status**
+*   **Testing agent used after significant changes:** NO (Not since the latest bug fix attempt).
+*   **Troubleshoot agent used after agent stuck in loop:** NO
+*   **Test files created:** None for the current bug fix.
+*   **Known regressions:** The questionnaire scan functionality is a regression.
+
+**Credentials to test flow:**
+N/A
+
+**What agent forgot to execute**
+The agent implemented the fix for the bug but has not yet tested or verified it. The immediate next step is to restart the services and run a test to confirm the fix works.</analysis>

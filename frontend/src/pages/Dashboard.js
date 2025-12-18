@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code } from "lucide-react";
 import { toast } from "sonner";
-import { complianceApi } from "@/lib/api";
+import { complianceAPI } from "@/lib/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,9 +25,9 @@ const Dashboard = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await complianceApi.getReports();
-      setReports(response.data);
-      calculateStats(response.data);
+      const reports = await complianceAPI.getReports();
+      setReports(reports);
+      calculateStats(reports);
     } catch (error) {
       console.error("Error fetching reports:", error);
       // Don't show error toast on initial load - just set empty reports

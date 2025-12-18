@@ -105,4 +105,11 @@ android-sdk/ -e
 # Environment files
 *.env
 *.env.*
-backend/*.bak
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
