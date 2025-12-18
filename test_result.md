@@ -101,3 +101,137 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "EU AI Compliance Application - Fix 'Failed to create compliance scan' bug and verify both scan flows"
+
+backend:
+  - task: "Health Check Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "curl test passed - returns healthy status"
+
+  - task: "Questionnaire Compliance Scan Creation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "curl test passed - POST /api/compliance/scan returns scan ID and results"
+
+  - task: "Get Compliance Reports"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "curl test passed - GET /api/compliance/reports returns list"
+
+  - task: "Repository ZIP Upload Scan"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "curl test passed - POST /api/compliance/scan/repo returns scan ID with findings"
+
+  - task: "Controls List Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Available at GET /api/controls"
+
+frontend:
+  - task: "Dashboard Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Fixed to use complianceAPI from @/lib/api instead of direct axios"
+
+  - task: "New Compliance Scan Form"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/NewScan.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported 'Failed to create compliance scan' error - fa.createScan is not a function"
+      - working: true
+        agent: "main"
+        comment: "Fixed by changing from direct axios to complianceAPI.createScan(). Screenshot test passed - form submission navigates to results page"
+
+  - task: "Repository Upload Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/RepoScanUpload.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Uses repoScanAPI from @/lib/api - page loads correctly with file picker"
+
+  - task: "Report View Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ReportView.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Screenshot shows report page after scan submission"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "New Compliance Scan Form"
+    - "Dashboard Page"
+    - "Repository Upload Page"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Fixed P0 bug 'Failed to create compliance scan'. Root cause: NewScan.js and Dashboard.js were using axios directly instead of the centralized API client from @/lib/api. Applied fix by importing complianceAPI and using complianceAPI.createScan(). Manual screenshot testing confirmed fix works - form submits and navigates to results page. Please verify both scan flows end-to-end: 1) Questionnaire scan from /scan/new and 2) Repo upload scan from /scan/repo"
