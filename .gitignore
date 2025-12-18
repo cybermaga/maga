@@ -113,13 +113,11 @@ android-sdk/ -e
 # Environment files
 *.env
 *.env.*
-# Local runtime / generated artifacts (DO NOT COMMIT)
-backend/data/
-backend_last*.log
-frontend_last*.log
-*scan*.json
-*repo_scan*.json
-*evidence*.json
-*.bak.*
-*.bak
-.DS_Store
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
