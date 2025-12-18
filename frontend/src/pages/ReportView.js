@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { complianceAPI, downloadBlob } from "@/lib/api";
 
 const ReportView = () => {
   const { reportId } = useParams();
@@ -37,8 +34,8 @@ const ReportView = () => {
   const fetchReport = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}`);
-      setReport(response.data);
+      const reportData = await complianceAPI.getReport(reportId);
+      setReport(reportData);
     } catch (error) {
       console.error("Error fetching report:", error);
       toast.error("Failed to load report");
@@ -51,18 +48,8 @@ const ReportView = () => {
   const handleExport = async (format) => {
     try {
       setExporting(format);
-      const response = await axios.get(`${API}/compliance/reports/${reportId}/export?format=${format}`, {
-        responseType: format === 'pdf' ? 'blob' : 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `compliance_report_${reportId}.${format}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
+      const blob = await complianceAPI.exportReport(reportId, format);
+      downloadBlob(blob, `compliance_report_${reportId}.${format}`);
       toast.success(`Report exported as ${format.toUpperCase()}`);
     } catch (error) {
       console.error("Error exporting report:", error);
@@ -74,7 +61,7 @@ const ReportView = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API}/compliance/reports/${reportId}`);
+      await complianceAPI.deleteReport(reportId);
       toast.success("Report deleted successfully");
       navigate('/');
     } catch (error) {
