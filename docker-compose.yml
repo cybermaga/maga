@@ -11,11 +11,26 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=compliance_db
+      - MONGO_INITDB_DATABASE=emergent
     networks:
       - compliance-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: emergent-compliance-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - compliance-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,22 +43,48 @@ services:
     container_name: emergent-compliance-backend
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "8000:8000"
     environment:
       - MONGO_URL=mongodb://mongodb:27017
-      - DB_NAME=compliance_db
-      - CORS_ORIGINS=*
+      - DB_NAME=emergent
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_ORIGINS=http://localhost:3000
+    volumes:
+      - ./backend/data:/app/data
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - compliance-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/api/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: emergent-compliance-worker
+    restart: unless-stopped
+    command: celery -A worker.celery_app worker -l info
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=emergent
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend/data:/app/data
+    depends_on:
+      - mongodb
+      - redis
+      - backend
+    networks:
+      - compliance-network
 
   # Frontend Web App
   frontend:
@@ -51,7 +92,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_BACKEND_URL=http://localhost:8001
+        - REACT_APP_BACKEND_URL=http://localhost:8000
     container_name: emergent-compliance-frontend
     restart: unless-stopped
     ports:
@@ -61,10 +102,11 @@ services:
     networks:
       - compliance-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80"]
       interval: 30s
-      timeout: 10s
-      retries: 3
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   mongodb_data:
