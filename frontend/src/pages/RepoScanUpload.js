@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ const RepoScanUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState("");
 
+  const fileInputRef = useRef(null);
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setFileError("");
@@ -51,8 +52,8 @@ const RepoScanUpload = () => {
 
     try {
       setUploading(true);
-      setUploadProgress(0);
-
+      setUploadProgress(0); 
+    console.log("CLICK upload", { systemName, selectedFile });
       const result = await repoScanAPI.uploadAndScan(
         selectedFile,
         systemName,
@@ -151,17 +152,26 @@ const RepoScanUpload = () => {
                   Repository ZIP File <span className="text-red-500">*</span>
                 </Label>
                 <div className="mt-1.5">
-                  <label
-                    htmlFor="zip_file"
+                  <div
+ 		    role="button"
+		    tabIndex={0}
+	            onClick={() => {
+                      if (!uploading) fileInputRef.current?.click();
+                    }}
+ 		    onKeyDown={(e) => {
+   		      if (!uploading && (e.key === "Enter" || e.key === " ")) {
+     		        fileInputRef.current?.click();
+   		       }
+                     }}
                     className={`
-                      flex flex-col items-center justify-center w-full h-48 
+                      flex flex-col items-center justify-center w-full h-48
                       border-2 border-dashed rounded-lg cursor-pointer
                       transition-colors
-                      ${fileError ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:border-blue-400 bg-slate-50 hover:bg-blue-50'}
-                      ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                    data-testid="file-upload-area"
-                  >
+                      ${fileError ? "border-red-300 bg-red-50" : "border-slate-300 hover:border-blue-400 bg-slate-50 hover:bg-blue-50"}
+                      ${uploading ? "opacity-50 cursor-not-allowed" : ""}
+                     `}
+ 		     data-testid="file-upload-area"
+	        	>
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       {selectedFile ? (
                         <>
@@ -184,15 +194,16 @@ const RepoScanUpload = () => {
                       )}
                     </div>
                     <input
-                      id="zip_file"
-                      name="zip_file"
-                      type="file"
-                      accept=".zip,application/zip"
-                      className="hidden"
-                      onChange={handleFileChange}
-                      disabled={uploading}
-                      data-testid="file-input"
-                    />
+                     ref={fileInputRef}
+                     id="zip_file"
+                     name="zip_file"
+                     type="file"
+                     accept=".zip,application/zip,application/x-zip-compressed"
+                     className="sr-only"
+                     onChange={handleFileChange}
+                     disabled={uploading}
+                     data-testid="file-input"
+                   />	                     
                   </label>
                   {fileError && (
                     <div className="flex items-center mt-2 text-sm text-red-600" data-testid="file-error">
@@ -267,3 +278,4 @@ const RepoScanUpload = () => {
 };
 
 export default RepoScanUpload;
+

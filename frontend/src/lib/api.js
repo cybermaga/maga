@@ -1,235 +1,168 @@
-import axios from 'axios';
-
-// Use relative API path for Preview/Production, or explicit URL for development
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
-const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
-
-console.log('API Base URL:', API_BASE);
-
-// Configure axios defaults
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-axios.defaults.timeout = 30000; // 30 second timeout
-
-// Add response interceptor for better error handling
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response) {
-      // Server responded with error status
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      // Request made but no response
-      console.error('Network Error: No response from server');
-    } else {
-      // Something else happened
-      console.error('Error:', error.message);
-    }
-    return Promise.reject(error);
-  }
-);
-
 /**
- * API Client for Emergent AI Compliance
+ * frontend/src/lib/api.js
+ * Single source of truth for frontend API helpers.
+ * Goal: keep exports stable so the app compiles.
  */
 
-// ============================================
-// Questionnaire-based Compliance Scans
-// ============================================
+const API_BASE =
+  process.env.REACT_APP_API_BASE_URL ||
+  process.env.REACT_APP_API_URL ||
+  process.env.REACT_APP_BACKEND_URL ||
+  "http://localhost:8000/api";
 
-export const complianceAPI = {
-  /**
-   * Create a new questionnaire-based compliance scan
-   */
-  createScan: async (scanData) => {
-    const response = await axios.post(`${API_BASE}/compliance/scan`, scanData);
-    return response.data;
-  },
+async function request(path, opts = {}) {
+  const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 
-  /**
-   * Get all compliance scan reports
-   */
-  getReports: async () => {
-    const response = await axios.get(`${API_BASE}/compliance/reports`);
-    return response.data;
-  },
+  const headers = opts.headers || {};
+  const isFormData = typeof FormData !== "undefined" && opts.body instanceof FormData;
 
-  /**
-   * Get a specific compliance report by ID
-   */
-  getReport: async (reportId) => {
-    const response = await axios.get(`${API_BASE}/compliance/reports/${reportId}`);
-    return response.data;
-  },
+  const finalOpts = {
+    ...opts,
+    headers: isFormData ? headers : { "Content-Type": "application/json", ...headers },
+  };
 
-  /**
-   * Export a compliance report
-   * @param {string} reportId 
-   * @param {string} format - 'html', 'pdf', or 'json'
-   */
-  exportReport: async (reportId, format = 'html') => {
-    const response = await axios.get(
-      `${API_BASE}/compliance/reports/${reportId}/export`,
-      {
-        params: { format },
-        responseType: format === 'pdf' ? 'blob' : 'blob'
-      }
-    );
-    return response.data;
-  },
+  const res = await fetch(url, finalOpts);
 
-  /**
-   * Delete a compliance report
-   */
-  deleteReport: async (reportId) => {
-    const response = await axios.delete(`${API_BASE}/compliance/reports/${reportId}`);
-    return response.data;
+  // Try to parse JSON; fall back to text
+  const text = await res.text();
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = text;
   }
-};
 
-// ============================================
-// Evidence-based Repository Scans (NEW)
-// ============================================
+  if (!res.ok) {
+    const msg = typeof payload === "string" ? payload : (payload?.detail || payload?.message || JSON.stringify(payload));
+    throw new Error(msg || `API error ${res.status}`);
+  }
 
+  return payload;
+}
+
+/** Utilities used by UI */
+export function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) {
+    n = n / 1024;
+    i++;
+  }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+export function validateZipFile(file) {
+  if (!file) return { valid: false, error: "No file selected" };
+
+  const nameOk = (file.name || "").toLowerCase().endsWith(".zip");
+  const typeOk =
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed" ||
+    file.type === "" /* some browsers */;
+
+  if (!nameOk && !typeOk) return { valid: false, error: "Please select a .zip file" };
+
+  const max = 100 * 1024 * 1024; // 100MB
+  if (file.size > max) return { valid: false, error: "ZIP file is too large (max 100MB)" };
+
+  return { valid: true, error: "" };
+}
+
+/** Repo Scan API (used by RepoScanUpload page) */
 export const repoScanAPI = {
-  /**
-   * Upload a repository ZIP file and trigger a scan
-   * @param {File} zipFile - The repository ZIP file
-   * @param {string} systemName - Name of the AI system
-   * @param {Function} onUploadProgress - Optional callback for upload progress
-   */
-  uploadAndScan: async (zipFile, systemName, onUploadProgress) => {
-    const formData = new FormData();
-    formData.append('zip_file', zipFile);
-    formData.append('system_name', systemName);
+  uploadAndScan: (zipFile, systemName, onProgress) =>
+    new Promise((resolve, reject) => {
+      try {
+        const fd = new FormData();
+        fd.append("zip_file", zipFile);
+        fd.append("system_name", systemName);
 
-    const response = await axios.post(
-      `${API_BASE}/compliance/scan/repo`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: onUploadProgress ? (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onUploadProgress(percentCompleted);
-        } : undefined,
-        timeout: 300000, // 5 minutes timeout for large files
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}/compliance/scan/repo`);
+
+        xhr.upload.onprogress = (evt) => {
+          if (!onProgress) return;
+          if (evt.lengthComputable) {
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            onProgress(pct);
+          }
+        };
+
+        xhr.onload = () => {
+          try {
+            const text = xhr.responseText || "";
+            let payload = null;
+            try {
+              payload = text ? JSON.parse(text) : null;
+            } catch {
+              payload = text;
+            }
+
+            if (xhr.status >= 200 && xhr.status < 300) return resolve(payload);
+
+            const msg =
+              typeof payload === "string"
+                ? payload
+                : payload?.detail || payload?.message || JSON.stringify(payload);
+            return reject(new Error(msg || `Upload failed (${xhr.status})`));
+          } catch (e) {
+            return reject(e);
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(fd);
+      } catch (e) {
+        reject(e);
       }
-    );
-    return response.data;
-  },
+    }),
 
-  /**
-   * Get a specific repository scan result by ID
-   */
-  getScanResult: async (scanId) => {
-    const response = await axios.get(`${API_BASE}/compliance/scan/repo/${scanId}`);
-    return response.data;
-  },
-
-  /**
-   * Get all repository scan results
-   */
-  getAllScans: async () => {
-    const response = await axios.get(`${API_BASE}/compliance/scan/repo`);
-    return response.data;
-  },
-
-  /**
-   * Delete a repository scan
-   */
-  deleteScan: async (scanId) => {
-    const response = await axios.delete(`${API_BASE}/compliance/scan/repo/${scanId}`);
-    return response.data;
-  }
+  getResult: (id) => request(`/compliance/scan/repo/${id}`),
 };
 
-// ============================================
-// Controls and System Info
-// ============================================
+/** Artifacts API (used by ArtifactUploader component) */
+export const artifactsApi = {
+  upload: (file, type, scanId) => {
+    const fd = new FormData();
+    fd.append("type", type);
+    fd.append("file", file);
+    if (scanId) fd.append("scan_id", scanId);
+    return request("/artifacts/upload", { method: "POST", body: fd });
+  },
+};
 
+/** Evidence API (used by EvidenceTab component). Endpoints may be WIP; keep exports stable. */
+export const evidenceApi = {
+  getEvidence: (scanId) => request(`/compliance/scan/repo/${scanId}`),
+  runAnalyzers: (scanId, analyzers) =>
+    request("/evidence/run", { method: "POST", body: JSON.stringify({ scan_id: scanId, analyzers }) }),
+  getRawEvidence: (scanId, evidenceId) => request(`/evidence/${scanId}/${evidenceId}`),
+};
+
+/** System API */
 export const systemAPI = {
-  /**
-   * Get all defined compliance controls
-   */
-  getControls: async () => {
-    const response = await axios.get(`${API_BASE}/controls`);
-    return response.data;
-  },
-
-  /**
-   * Health check
-   */
-  healthCheck: async () => {
-    const response = await axios.get(`${API_BASE}/health`);
-    return response.data;
-  },
-
-  /**
-   * Get API root info
-   */
-  getInfo: async () => {
-    const response = await axios.get(`${API_BASE}/`);
-    return response.data;
-  }
+  health: () => request("/health", { method: "GET" }),
 };
 
-// ============================================
-// Helper Functions
-// ============================================
+/** Reports */
+export async function getReports() {
+  return request("/reports", { method: "GET" });
+}
 
 /**
- * Download a blob as a file
+ * Compatibility exports — different files may import different casing.
+ * Keep both, to stop build-breaking import errors.
  */
-export const downloadBlob = (blob, filename) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+export const complianceAPI = {
+  getReports,
+  health: () => request("/health", { method: "GET" }),
 };
 
-/**
- * Format file size for display
- */
-export const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-};
+export const complianceApi = complianceAPI;
 
-/**
- * Validate ZIP file
- */
-export const validateZipFile = (file) => {
-  const maxSize = 100 * 1024 * 1024; // 100MB
-  const allowedTypes = ['application/zip', 'application/x-zip-compressed'];
-  
-  if (!file) {
-    return { valid: false, error: 'No file selected' };
-  }
-  
-  if (!allowedTypes.includes(file.type) && !file.name.endsWith('.zip')) {
-    return { valid: false, error: 'File must be a ZIP archive' };
-  }
-  
-  if (file.size > maxSize) {
-    return { valid: false, error: `File size exceeds ${formatFileSize(maxSize)}` };
-  }
-  
-  return { valid: true };
-};
-
-export default {
-  complianceAPI,
-  repoScanAPI,
-  systemAPI,
-  downloadBlob,
-  formatFileSize,
-  validateZipFile
-};
+// Also keep older helper name if something imports it:
+export async function uploadRepoScan(zipFile, systemName) {
+  return repoScanAPI.uploadAndScan(zipFile, systemName);
+}
