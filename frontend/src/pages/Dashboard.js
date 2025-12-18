@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code } from "lucide-react";
 import { toast } from "sonner";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { complianceAPI } from "@/lib/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -28,9 +25,9 @@ const Dashboard = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/compliance/reports`);
-      setReports(response.data);
-      calculateStats(response.data);
+      const reports = await complianceAPI.getReports();
+      setReports(reports);
+      calculateStats(reports);
     } catch (error) {
       console.error("Error fetching reports:", error);
       // Don't show error toast on initial load - just set empty reports
