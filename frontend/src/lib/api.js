@@ -4,25 +4,61 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
-console.log('API Base URL:', API_BASE);
+// Debug mode - enable detailed logging
+const DEBUG_MODE = true;
+
+// Log configuration on load
+console.log('=== API Client Configuration ===');
+console.log('REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
+console.log('BACKEND_URL resolved:', BACKEND_URL);
+console.log('API_BASE:', API_BASE);
+console.log('================================');
 
 // Configure axios defaults
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 axios.defaults.timeout = 30000; // 30 second timeout
 
+// Add request interceptor for debugging
+axios.interceptors.request.use(
+  config => {
+    if (DEBUG_MODE) {
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+      if (config.data) {
+        const dataKeys = config.data instanceof FormData 
+          ? Array.from(config.data.keys())
+          : Object.keys(config.data);
+        console.log('[API Request] Payload keys:', dataKeys);
+      }
+    }
+    return config;
+  },
+  error => {
+    console.error('[API Request Error]', error);
+    return Promise.reject(error);
+  }
+);
+
 // Add response interceptor for better error handling
 axios.interceptors.response.use(
-  response => response,
+  response => {
+    if (DEBUG_MODE) {
+      console.log(`[API Response] ${response.status} ${response.config.url}`);
+      console.log('[API Response] Data preview:', JSON.stringify(response.data).substring(0, 200));
+    }
+    return response;
+  },
   error => {
     if (error.response) {
       // Server responded with error status
-      console.error('API Error:', error.response.status, error.response.data);
+      console.error(`[API Error] ${error.response.status} ${error.config?.url}`);
+      console.error('[API Error] Response:', error.response.data);
     } else if (error.request) {
       // Request made but no response
-      console.error('Network Error: No response from server');
+      console.error('[API Network Error] No response from server');
+      console.error('[API Network Error] URL:', error.config?.url);
     } else {
       // Something else happened
-      console.error('Error:', error.message);
+      console.error('[API Error]', error.message);
     }
     return Promise.reject(error);
   }
