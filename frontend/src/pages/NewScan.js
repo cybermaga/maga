@@ -12,6 +12,7 @@ import { complianceAPI } from "@/lib/api";
 const NewScan = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [artifactIds, setArtifactIds] = useState([]);
   const [formData, setFormData] = useState({
     system_name: "",
     description: "",
@@ -25,7 +26,8 @@ const NewScan = () => {
     technical_docs: "",
     testing_procedures: "",
     human_oversight: "",
-    accuracy_metrics: ""
+    accuracy_metrics: "",
+    artifact_ids: []
   });
 
   const handleChange = (e) => {
@@ -217,6 +219,12 @@ const NewScan = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Artifact Uploader */}
+          <ArtifactUploader
+            scanId={null}
+            onArtifactsChange={setArtifactIds}
+          />
 
           {/* Compliance Documentation */}
           <Card className="mb-6 border-slate-200" data-testid="compliance-docs-card">

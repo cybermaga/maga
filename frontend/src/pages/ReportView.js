@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Loader2, Shield, CheckCircle2, XCircle, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -221,7 +222,16 @@ const ReportView = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Overall Score Card */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence & Mapping</TabsTrigger>
+            <TabsTrigger value="details">Detailed Results</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-8 mt-6">
+            {/* Overall Score Card */}
         <Card className="mb-8 border-slate-200" data-testid="overall-score-card">
           <CardHeader>
             <CardTitle className="text-2xl text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -298,7 +308,15 @@ const ReportView = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          {/* Evidence Tab */}
+          <TabsContent value="evidence" className="mt-6">
+            <EvidenceTab scanId={reportId} />
+          </TabsContent>
+
+          {/* Details Tab */}
+          <TabsContent value="details" className="mt-6">
         {/* Detailed Compliance Results */}
         <Card className="border-slate-200" data-testid="detailed-results-card">
           <CardHeader>
@@ -374,6 +392,8 @@ const ReportView = () => {
             </Accordion>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
