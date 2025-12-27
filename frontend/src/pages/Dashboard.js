@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code } from "lucide-react";
+import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code, RefreshCw, XCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { complianceApi } from "@/lib/api";
 
@@ -11,6 +11,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+  const [apiStatus, setApiStatus] = useState('checking'); // 'checking', 'connected', 'error'
   const [stats, setStats] = useState({
     total: 0,
     compliant: 0,
@@ -19,8 +21,22 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
+    checkApiHealth();
     fetchReports();
   }, []);
+
+  const checkApiHealth = async () => {
+    try {
+      setApiStatus('checking');
+      console.log('[Dashboard] Checking API health...');
+      await systemAPI.healthCheck();
+      setApiStatus('connected');
+      console.log('[Dashboard] API is healthy');
+    } catch (error) {
+      console.error('[Dashboard] API health check failed:', error);
+      setApiStatus('error');
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -29,14 +45,19 @@ const Dashboard = () => {
       setReports(response.data);
       calculateStats(response.data);
     } catch (error) {
-      console.error("Error fetching reports:", error);
-      // Don't show error toast on initial load - just set empty reports
+      console.error('[Dashboard] Error fetching reports:', error);
       setReports([]);
       setStats({ total: 0, compliant: 0, partial: 0, nonCompliant: 0 });
       
-      // Only show error if it's not a network/connection issue
+      // Set visible error message
+      const errorMsg = error.response?.data?.detail 
+        || error.message 
+        || 'Failed to connect to API';
+      setApiError(errorMsg);
+      
+      // Show toast for non-404 errors
       if (error.response && error.response.status !== 404) {
-        toast.error("Failed to load reports");
+        toast.error(`API Error: ${errorMsg}`);
       }
     } finally {
       setLoading(false);
@@ -94,6 +115,29 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+      {/* API Status Banner */}
+      {apiStatus === 'error' && (
+        <div className="bg-red-600 text-white px-4 py-2 text-center text-sm" data-testid="api-error-banner">
+          <XCircle className="inline h-4 w-4 mr-2" />
+          API Connection Failed - Backend may be unavailable
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => { checkApiHealth(); fetchReports(); }}
+            className="ml-4 text-white hover:bg-red-700"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" /> Retry
+          </Button>
+        </div>
+      )}
+      
+      {apiError && (
+        <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm" data-testid="api-error-message">
+          <AlertCircle className="inline h-4 w-4 mr-2" />
+          {apiError}
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-6">
@@ -106,7 +150,19 @@ const Dashboard = () => {
                 <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Space Grotesk, sans-serif' }} data-testid="app-title">
                   Emergent AI Compliance
                 </h1>
-                <p className="text-sm text-slate-600 mt-1" data-testid="app-subtitle">EU AI Act Compliance Analysis Tool</p>
+                <div className="flex items-center space-x-2">
+                  <p className="text-sm text-slate-600" data-testid="app-subtitle">EU AI Act Compliance Analysis Tool</p>
+                  {/* API Status Indicator */}
+                  <Badge 
+                    variant="outline" 
+                    className={apiStatus === 'connected' ? 'border-green-500 text-green-700' : apiStatus === 'error' ? 'border-red-500 text-red-700' : 'border-slate-300 text-slate-500'}
+                    data-testid="api-status"
+                  >
+                    {apiStatus === 'connected' && <CheckCircle className="h-3 w-3 mr-1" />}
+                    {apiStatus === 'error' && <XCircle className="h-3 w-3 mr-1" />}
+                    API: {apiStatus}
+                  </Badge>
+                </div>
               </div>
             </div>
             <div className="flex space-x-3">
