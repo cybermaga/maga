@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
-import { complianceAPI } from "@/lib/api";
+import ArtifactUploader from "@/components/ArtifactUploader";
+import { complianceApi } from "@/lib/api";
 
 const NewScan = () => {
   const navigate = useNavigate();
@@ -45,20 +46,13 @@ const NewScan = () => {
 
     try {
       setLoading(true);
-      console.log("Creating scan with data:", formData);
-      const response = await complianceAPI.createScan(formData);
-      console.log("Scan created successfully:", response);
+      const scanData = { ...formData, artifact_ids: artifactIds };
+      const response = await complianceApi.createScan(scanData);
       toast.success("Compliance scan completed successfully!");
-      navigate(`/report/${response.id}`);
+      navigate(`/report/${response.data.id}`);
     } catch (error) {
       console.error("Error creating scan:", error);
-      const errorMessage = error.response?.data?.detail || error.message || "Failed to create compliance scan";
-      console.error("Full error:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.detail || "Failed to create compliance scan");
     } finally {
       setLoading(false);
     }
