@@ -1,3 +1,6 @@
+from fastapi import UploadFile, File, Form
+import uuid
+import shutil
 import zipfile
 import hashlib
 import os
@@ -626,7 +629,13 @@ async def health_check():
         "version": "1.0.0"
     }
 
+@api_router.get("/status")
+async def status():
+    return {"status": "ok"}
 
+@api_router.get("/version")
+async def version():
+    return {"ok": True, "version": "0.1.0", "service": "emergent-ai-compliance"}
 # Include the router in the main app
 app.include_router(api_router)
 

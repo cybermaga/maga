@@ -152,7 +152,7 @@ const RepoScanUpload = () => {
                   Repository ZIP File <span className="text-red-500">*</span>
                 </Label>
                 <div className="mt-1.5">
-                  <div
+                  <div>
  		    role="button"
 		    tabIndex={0}
 	            onClick={() => {
@@ -204,7 +204,7 @@ const RepoScanUpload = () => {
                      disabled={uploading}
                      data-testid="file-input"
                    />	                     
-                  </label>
+                  </div>
                   {fileError && (
                     <div className="flex items-center mt-2 text-sm text-red-600" data-testid="file-error">
                       <AlertCircle className="w-4 h-4 mr-2" />
