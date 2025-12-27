@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Shield, TrendingUp, AlertCircle, Upload, Code, RefreshCw, XCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { complianceAPI, systemAPI } from "@/lib/api";
+import { complianceApi } from "@/lib/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -41,12 +41,9 @@ const Dashboard = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      setApiError(null);
-      console.log('[Dashboard] Fetching reports...');
-      const reports = await complianceAPI.getReports();
-      console.log('[Dashboard] Reports fetched:', reports.length);
-      setReports(reports);
-      calculateStats(reports);
+      const response = await complianceApi.getReports();
+      setReports(response.data);
+      calculateStats(response.data);
     } catch (error) {
       console.error('[Dashboard] Error fetching reports:', error);
       setReports([]);
